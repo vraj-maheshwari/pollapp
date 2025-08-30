@@ -20,6 +20,13 @@
               <div class="alert alert-danger">Poll expired. Final results below.</div>
             {% endif %}
 
+            {% if insights %}
+            <div class="alert alert-info">
+              <h6><i class="bi bi-lightbulb"></i> AI Insights</h6>
+              <p class="mb-0">{{ insights }}</p>
+            </div>
+            {% endif %}
+
             <div id="resultsContainer">
               {% for text, count, opt_id, percentage in results %}
               <div class="mb-3">

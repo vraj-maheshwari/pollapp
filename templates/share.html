@@ -23,6 +23,17 @@
                 <button class="btn btn-outline-secondary" type="button" onclick="copyLink()">Copy</button>
               </div>
             </div>
+            {% if creator_link %}
+            <div class="mb-3">
+              <label class="form-label">Creator Dashboard (Keep this private!)</label>
+              <div class="input-group">
+                <input type="text" class="form-control" id="creatorLink" value="{{ creator_link }}" readonly>
+                <button class="btn btn-outline-success" type="button" onclick="copyCreatorLink()">Copy</button>
+              </div>
+              <div class="form-text text-warning">⚠️ This link gives full access to poll analytics and management</div>
+            </div>
+            {% endif %}
+
             <div class="mb-3">
               <label class="form-label">QR Code</label><br>
               <img src="{{ url_for('qr_code', poll_id=poll_id) }}" class="img-fluid border rounded" alt="QR">
@@ -31,6 +42,9 @@
             <div class="d-flex gap-2">
               <a href="{{ link }}" class="btn btn-primary" target="_blank">Open Poll</a>
               <a href="{{ url_for('results_view', poll_id=poll_id) }}" class="btn btn-outline-primary">View Results</a>
+              {% if creator_link %}
+              <a href="{{ creator_link }}" class="btn btn-outline-success">Dashboard</a>
+              {% endif %}
             </div>
           </div>
         </div>
@@ -43,6 +57,14 @@ function copyLink(){
   const inp = document.getElementById('shareLink');
   inp.select(); inp.setSelectionRange(0, 99999);
   document.execCommand('copy');
+  alert('Poll link copied!');
+}
+
+function copyCreatorLink(){
+  const inp = document.getElementById('creatorLink');
+  inp.select(); inp.setSelectionRange(0, 99999);
+  document.execCommand('copy');
+  alert('Creator dashboard link copied! Keep this private.');
 }
 </script>
 </body>
