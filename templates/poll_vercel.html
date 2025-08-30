@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ question }} - Vote Now</title>
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:title" content="{{ question }}">
+  <meta property="og:description" content="{{ og_description }}">
+  <meta property="og:image" content="{{ url_for('qr_code', poll_id=poll_id, _external=True) }}">
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="{{ request.url }}">
+  <meta property="twitter:title" content="{{ question }}">
+  <meta property="twitter:description" content="{{ og_description }}">
+  <meta property="twitter:image" content="{{ url_for('qr_code', poll_id=poll_id, _external=True) }}">
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-lg-7">
+        <div class="card shadow-sm">
+          <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">{{ question }}</h5>
+          </div>
+          <div class="card-body">
+
+            {% if has_voted %}
+              <div class="alert alert-success">You have already voted. See live results below.</div>
+            {% else %}
+              <form method="post" id="voteForm">
+                <div class="vstack gap-2">
+                  {% for option in options %}
+                  <div class="form-check border rounded p-3">
+                    <input class="form-check-input" type="radio" name="option" id="opt{{ option[0] }}" value="{{ option[0] }}" required>
+                    <label class="form-check-label" for="opt{{ option[0] }}">{{ option[1] }}</label>
+                  </div>
+                  {% endfor %}
+                </div>
+                <button type="submit" class="btn btn-primary w-100 mt-3">Submit Vote</button>
+              </form>
+            {% endif %}
+
+            {% if hide_results and not has_voted %}
+              <div class="alert alert-warning mt-3">Results are hidden until you vote.</div>
+            {% endif %}
+
+            {% if results %}
+              <hr class="my-4">
+              <h6 class="mb-3">Live Results <small class="text-muted">(auto-refreshing)</small></h6>
+              <div id="resultsContainer">
+                {% if total_votes > 0 %}
+                  {% for text, count, opt_id, percentage in results %}
+                  <div class="mb-3">
+                    <div class="d-flex justify-content-between"><strong>{{ text }}</strong><span>{{ count }} votes</span></div>
+                    <div class="progress">
+                      <div class="progress-bar" role="progressbar" style="width: {{ percentage }}%" aria-valuenow="{{ percentage }}" aria-valuemin="0" aria-valuemax="100">{{ "%.1f"|format(percentage) }}%</div>
+                    </div>
+                  </div>
+                  {% endfor %}
+                  <div class="text-muted small">Total votes: <span id="totalVotes">{{ total_votes }}</span></div>
+                {% else %}
+                  <div class="alert alert-info">No votes yet. Be the first!</div>
+                {% endif %}
+              </div>
+            {% endif %}
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// Polling-based updates for Vercel (no WebSockets)
+async function updateResults(){
+  try{
+    const r = await fetch('/api/results/{{ poll_id }}');
+    const d = await r.json();
+    const container = document.getElementById('resultsContainer');
+    if(!container) return;
+    
+    if(d.total_votes > 0){
+      container.innerHTML = d.results.map(x => `
+        <div class="mb-3">
+          <div class="d-flex justify-content-between"><strong>${x.text}</strong><span>${x.count} votes</span></div>
+          <div class="progress">
+            <div class="progress-bar" role="progressbar" style="width:${x.percentage}%">${x.percentage}%</div>
+          </div>
+        </div>`).join('') + `<div class="text-muted small">Total votes: <span id="totalVotes">${d.total_votes}</span></div>`;
+    } else {
+      container.innerHTML = `<div class="alert alert-info">No votes yet.</div>`;
+    }
+  } catch(e){ console.error(e); }
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{ 
+  {% if not hide_results %} 
+    // Poll for updates every 3 seconds
+    setInterval(updateResults, 3000); 
+  {% endif %} 
+});
+</script>
+</body>
+</html>
